@@ -3,6 +3,8 @@ var keysfile = require("./keys.js");
 var Twitter = require('twitter');
 var Spotify = require('node-spotify-api');
 var request = require('request');
+var randfile = "./random.txt";
+var fs = require('fs');
 
 //take keys out of key file
 var Tkeys = keysfile.twitterKeys;
@@ -22,19 +24,45 @@ var spotify = new Spotify({
   secret: Skeys.Client_Secret
 });
 
+
 //get user input
-var lenny = process.argv.length
+var lenny = process.argv.length;
 var switcher = process.argv[2];
-var userinput = ""
+var userinput = "";
 //get the name of movie or song and put them in correct API adding form
 if(lenny>3){
-	console.log("there's stuff after the switch")
+	console.log("capturing title that user input and making it API-able");
 	for(var i = 3; i<lenny;i++){
 		userinput = userinput + process.argv[i] + "+"
 	};
 	userinput = userinput.substring(0, userinput.length - 1); 
 	console.log("post slice " + userinput);
 }
+
+// get calls from file
+function readfile(){
+	var fileinput =""
+	var fileswitch=""
+	fs.readFile(randfile, "utf8", function(error, data){
+		if (error){
+			return console.log("error in the file reader");
+		}
+		console.log("you are reading file");
+		dataArr = data.split(",");
+		console.log(dataArr);
+		fileswitch = dataArr[0];
+		console.log("holder is " + fileswitch);
+		fileinput= dataArr[1];
+		console.log("raw output is "+fileinput);
+		userinput=fileinput.replace(/ /g, "+").replace(/"/g, "");
+		console.log(userinput);
+		console.log("switcher is " + switcher + "and you are in the first if fileswitch is " + fileswitch);
+		switcher = fileswitch;
+		console.log("post replacement switcher "+switcher);
+		apiCalls();
+	});
+};
+
 
 //define functions for the switcher
 function my_tweets(){
@@ -98,26 +126,31 @@ function movie_this(){
 	}	
 };
 
-function do_what_it_says(){
 
-};
-
-//switcher
-switch (switcher) {
-	case "my-tweets":
-	console.log("you are in tweets switch");
-	my_tweets();
-	break;
-
-	case "spotify-this-song":
-	spotify_this_song();
-	break;
-
-	case "movie-this":
-	movie_this();
-	break;
-
-	case "do-what-it-says":
-	do_what_it_says();
-	break;
+//check if we need to read the file to find the "real" switcher
+if(switcher === "do-what-it-says"){
+	readfile();
 }
+else{
+	apiCalls();
+}
+
+//switch to handle what the actual API call needs to be based on user input OR the file that was read
+function apiCalls(){
+	switch (switcher) {
+		case "my-tweets":
+		console.log("you are in tweets switch");
+		my_tweets();
+		break;
+
+		case "spotify-this-song":
+		console.log("you're in spotify the input val is " + userinput);
+		spotify_this_song();
+		break;
+
+		case "movie-this":
+		console.log("you're in movie the input val is " + userinput);
+		movie_this();
+		break;
+	}
+}	
